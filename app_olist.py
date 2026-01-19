@@ -59,20 +59,26 @@ def fetch_naver_trend(keywords, start_date, end_date):
 # 페이지 설정
 st.set_page_config(page_title="Olist E-commerce 분석 대시보드", layout="wide")
 
-# 데이터 경로 설정 (대소문자 구분 문제 해결)
-# Streamlit Cloud(Linux)는 대소문자를 구분하므로 DATA_1과 data_1 모두 확인합니다.
+# 데이터 경로 설정 (유연한 경로 탐색: DATA_1 폴더 또는 루트 디렉토리)
 base_path = os.path.dirname(__file__)
-possible_paths = [os.path.join(base_path, 'DATA_1'), os.path.join(base_path, 'data_1')]
-DATA_PATH = None
+possible_data_paths = [
+    os.path.join(base_path, 'DATA_1'),
+    os.path.join(base_path, 'data_1'),
+    base_path # 파일이 폴더 없이 루트에 있는 경우
+]
 
-for p in possible_paths:
-    if os.path.exists(p):
+DATA_PATH = None
+for p in possible_data_paths:
+    # 필수 파일 중 하나인 olist_orders_dataset이 있는지 확인하여 실제 데이터 경로 판별
+    if os.path.exists(os.path.join(p, 'olist_orders_dataset.parquet')) or \
+       os.path.exists(os.path.join(p, 'olist_orders_dataset.csv')):
         DATA_PATH = p
         break
 
 if not DATA_PATH:
-    st.error("❌ 데이터 폴더('DATA_1' 또는 'data_1')를 찾을 수 없습니다.")
+    st.error("❌ 데이터 파일을 찾을 수 없습니다.")
     st.write(f"현재 위치({base_path})의 파일 목록:", os.listdir(base_path))
+    st.info("데이터 파일들을 'DATA_1' 폴더에 넣거나, app_olist.py와 같은 위치에 업로드해주세요.")
     st.stop()
 
 @st.cache_data
@@ -91,6 +97,7 @@ def load_data():
     
     loaded_data = {}
     for key, base_name in file_bases.items():
+        # DATA_PATH(폴더 또는 루트)에서 파일 찾기
         pq_path = os.path.join(DATA_PATH, base_name + '.parquet')
         csv_path = os.path.join(DATA_PATH, base_name + '.csv')
         
@@ -99,9 +106,16 @@ def load_data():
         elif os.path.exists(csv_path):
             loaded_data[key] = pd.read_csv(csv_path)
         else:
-            st.error(f"❌ '{base_name}' 파일을 찾을 수 없습니다. (.parquet 또는 .csv)")
-            st.write(f"현재 폴더({DATA_PATH}) 파일 목록:", os.listdir(DATA_PATH))
-            st.stop()
+            # 혹시나 DATA_PATH 외에 루트 디렉토리도 재확인
+            pq_root = os.path.join(base_path, base_name + '.parquet')
+            csv_root = os.path.join(base_path, base_name + '.csv')
+            if os.path.exists(pq_root):
+                loaded_data[key] = pd.read_parquet(pq_root, engine='pyarrow')
+            elif os.path.exists(csv_root):
+                loaded_data[key] = pd.read_csv(csv_root)
+            else:
+                st.error(f"❌ '{base_name}' 파일을 찾을 수 없습니다.")
+                st.stop()
     
     # 날짜 형식 변환 (orders 데이터프레임)
     orders = loaded_data['orders']
