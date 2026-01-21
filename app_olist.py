@@ -228,10 +228,16 @@ else:
     elif comparison_theme == "2. 지역 경제력과 소비 패턴":
         st.subheader("💰 경제력 지표와 소비 패턴")
         st.write("경제 수준(GRDP)이 높은 지역일수록 서비스 품질에 민감한 경향이 있습니다.")
-        rev_by_state = pd.merge(filtered_orders, payments.groupby('order_id')['payment_value'].sum().reset_index(), on='order_id')
-        rev_by_state = pd.merge(rev_by_state, customers, on='customer_id')
+        
+        # filtered_orders에 이미 customers 정보가 병합되어 있으므로 결제 데이터만 붙임
+        order_pay_sum = payments.groupby('order_id')['payment_value'].sum().reset_index()
+        rev_by_state = pd.merge(filtered_orders, order_pay_sum, on='order_id')
+        
+        # 주별 매출 집계
         state_sales = rev_by_state.groupby('customer_state')['payment_value'].sum().reset_index()
-        st.plotly_chart(px.pie(state_sales.head(10), values='payment_value', names='customer_state', title="Brazil Top 10 Sales States"), use_container_width=True)
+        st.plotly_chart(px.pie(state_sales.sort_values('payment_value', ascending=False).head(10), 
+                             values='payment_value', names='customer_state', title="Brazil Top 10 Sales States (Filtered)"), 
+                       use_container_width=True)
         st.caption("한국의 경우 서울/경기의 온라인 쇼핑 거래액이 전체의 50% 이상을 차지하는 것과 유사한 집중도를 보입니다.")
 
     elif comparison_theme == "3. 전자상거래 실태 및 결제":
