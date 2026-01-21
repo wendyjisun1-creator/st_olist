@@ -130,15 +130,24 @@ if tab_selection == "대시보드 메인":
     search_query = st.sidebar.text_input("카테고리 검색", "")
     price_range = st.sidebar.slider("가격 범위 (BRL)", 0.0, 1000.0, (0.0, 1000.0))
 else:
-    st.sidebar.header("主题 선택 (OLIST vs 한국)")
-    comparison_theme = st.sidebar.selectbox("주제를 선택하세요", [
+    st.sidebar.header("OLIST-한국 비교 옵션")
+    comparison_theme = st.sidebar.selectbox("주제 선택 (OLIST vs 한국)", [
         "1. 물류 거점 및 배송 효율성",
         "2. 지역 경제력과 소비 패턴",
         "3. 전자상거래 실태 및 결제",
         "4. 판매자 신뢰도 및 성과",
         "5. 소비자 만족도 및 행동"
     ])
-    region_filter = st.sidebar.multiselect("브라질 지역(주) 필터", customers['customer_state'].unique(), default=['SP', 'RJ', 'MG'])
+    
+    # 지역 필터 오류 방지 코드
+    available_states = sorted(customers['customer_state'].unique().tolist())
+    default_selection = [s for s in ['SP', 'RJ', 'MG'] if s in available_states]
+    
+    # 만약 기본 도시가 데이터에 없으면 첫 번째 도시 선택
+    if not default_selection and available_states:
+        default_selection = [available_states[0]]
+        
+    region_filter = st.sidebar.multiselect("브라질 지역(주) 필터", available_states, default=default_selection)
     year_filter = st.sidebar.selectbox("대상 연도", [2017, 2018], index=1)
 
 # --- 메인 화면 ---
