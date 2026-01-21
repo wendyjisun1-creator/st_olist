@@ -158,7 +158,11 @@ if mode == "대시보드 메인":
         st.markdown("---")
         st.subheader("🚨 집중 관리 필요 카테고리 (주문수 높으나 배송 느리고 평점 낮은 품목)")
         if not under_performers.empty:
-            st.dataframe(under_performers.style.background_gradient(subset=['평균배송일'], cmap='Reds').background_gradient(subset=['평균평점'], cmap='RdYlGn_r'))
+            try:
+                # matplotlib이 필요하므로 예외 처리 추가
+                st.dataframe(under_performers.style.background_gradient(subset=['평균배송일'], cmap='Reds').background_gradient(subset=['평균평점'], cmap='RdYlGn_r'))
+            except Exception:
+                st.dataframe(under_performers)
         else:
             st.write("모든 카테고리가 양호한 성과를 보이고 있습니다.")
         st.caption("📂 **Data Source**: Olist 'order_items', 'products', 'orders', 'reviews' dataset")

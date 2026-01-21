@@ -6,3 +6,5 @@ python-dotenv
 pyarrow
 numpy
 statsmodels
+matplotlib
+scipy
